@@ -1,12 +1,13 @@
 
 import java.util.Scanner;
 
-public class zadanie_01{
+public class Minutnik{
     public static void main(String[] args) {   
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("Podaj ile min: ");
-        double min = scanner.nextDouble();
-        minutnik(min);
+        try (Scanner scanner = new Scanner(System.in)) {
+            System.out.println("Podaj ile min: ");
+            double min = scanner.nextDouble();
+            minutnik(min);
+        }
     }
 
     public static void minutnik(double min){
