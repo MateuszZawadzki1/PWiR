@@ -5,15 +5,19 @@ class Sito {
     public static void main(String[] args) {
         Buffor buffor = new Buffor();
         Generator generator = new Generator(buffor, 1000);
-        Thread thread = new Thread(generator);
+        Consum consum = new Consum(buffor);
 
-        thread.start();
-        
+        Thread generatorThread = new Thread(generator);
+        Thread consumThread = new Thread(consum);
+
+        generatorThread.start();
+        consumThread.start();
+
     }
 
 }
 
-class Generator implements Runnable{
+class Generator implements Runnable {
     private int range;
     private Buffor buffor;
 
@@ -25,12 +29,21 @@ class Generator implements Runnable{
     @Override
     public void run() {
         for (int i = 2; i < range; i++) {
-            buffor.addToList(i);
-
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+            synchronized (buffor) {
+                while (buffor.isFull()) {
+                    try {
+                        buffor.wait();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                buffor.addToList(i);
+                buffor.notifyAll();
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }
     }
@@ -40,25 +53,73 @@ class Generator implements Runnable{
 class Buffor {
     private ArrayList<Integer> queue = new ArrayList<>();
 
-    public void addToList(int num){
+    public void addToList(int num) {
         queue.add(num);
         System.out.println(queue.toString());
     }
 
-    public void removeFromList(){
-        queue.get(0);
+    public int getNumber() {
+        int num = queue.getFirst();
+        queue.removeFirst();
+        return num;
+    }
+
+    public boolean isFull() {
+        if (queue.size() == 5) {
+            return true;
+        }
+        return false;
+    }
+
+    public boolean isEmpty(){
+        if (queue.size() == 0) {
+            return true;
+        }
+        return false;
     }
 }
 
-// class SitoEr {
+class Consum implements Runnable {
+    private Buffor buffor;
 
-        // // Zastosowanie algorytmu Sita Eratostenesa
-        // for (int p = 2; p * p <= n; p++) {
-        //     if (prime[p]) {
-        //         // Zaznaczanie wielokrotności liczby p jako niepierwsze
-        //         for (int i = p * p; i <= n; i += p) {
-        //             prime[i] = false;
-//                 }
-//             }
-//         }
-// }
+    public Consum(Buffor buffor) {
+        this.buffor = buffor;
+    }
+
+    private boolean isPrime(int number) {
+        if (number <= 1)
+            return false;
+        for (int i = 2; i <= Math.sqrt(number); i++) {
+            if (number % i == 0)
+                return false;
+        }
+        return true;
+    }
+
+    @Override
+    public void run() {
+        for (int i = 2; i < 1000; i++) {
+            synchronized (buffor) {
+                while (buffor.isEmpty()) {
+                    try {
+                        buffor.wait();
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                int number = buffor.getNumber();
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                buffor.notifyAll();
+                if (isPrime(number)) {
+                    System.out.println("Liczba pierwsza: " + number);
+                } else {
+                    System.out.println("Liczba nie jest liczba pierwsza: " + number);
+                }
+            }
+        }
+    }
+}
