@@ -34,55 +34,50 @@ class Generator implements Runnable {
     @Override
     public void run() {
         for (int i = 0; i < range; i++) {
-            int num = generatorRandom.nextInt();
+            int num = generatorRandom.nextInt(0, 9);
             synchronized (bufor) {
-                while (num == 0) {
-                    try {
-                        bufor.wait();
-                    } catch (InterruptedException ex) {
-                    }
-                }
                 bufor.addToString(num);
                 bufor.notifyAll();
-                try {
+            }
+            try {
                     Thread.sleep(1000);
                 } catch (InterruptedException ex) {
                 }
-            }
         }
     }
 }
 
 class Bufor {
 
-    private String numString = "";
+    private String currentNumber = "";
 
     public void addToString(int num) {
         String convertNum = Integer.toString(num);
-        numString += convertNum;
+        currentNumber += convertNum;
     }
 
-    public String getNumString() {
-        return numString;
+    public String getCurrentNumber() {
+        return currentNumber;
     }
 
     public boolean isEmpty() {
-        if (numString.equals("")) {
+        if (currentNumber.equals("")) {
             return true;
         }
         return false;
     }
 
     public void clearNumString() {
-        numString = "";
+        currentNumber = "";
     }
+
 }
 
 class Consument implements Runnable {
 
     private final Bufor bufor;
     private final int range;
-    private final ArrayList nums = new ArrayList();
+    private final ArrayList<Integer> nums = new ArrayList();
 
     public Consument(Bufor bufor, int range) {
         this.bufor = bufor;
@@ -104,10 +99,19 @@ class Consument implements Runnable {
                     } catch (InterruptedException ex) {
                     }
                 }
-                nums.add(pullOutNumber(bufor.getNumString()));
-                bufor.clearNumString();
-                bufor.notifyAll();
-                System.out.println(nums);
+                System.out.println(bufor.getCurrentNumber());
+                if ( !bufor.isEmpty() && bufor.getCurrentNumber().charAt(bufor.getCurrentNumber().length()-1) == '0') {
+                    nums.add(pullOutNumber(bufor.getCurrentNumber()));
+                    bufor.clearNumString();
+                    bufor.notifyAll();
+                    System.out.println(nums);
+                } 
+                
+            }
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
     }

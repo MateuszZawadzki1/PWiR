@@ -4,7 +4,7 @@ import java.util.List;
 class Sito {
     public static void main(String[] args) {
         Buffor buffor = new Buffor();
-        Generator generator = new Generator(buffor, 1000);
+        Generator generator = new Generator(buffor, 20);
         Consum consum = new Consum(buffor);
 
         Thread generatorThread = new Thread(generator);
@@ -39,11 +39,11 @@ class Generator implements Runnable {
                 }
                 buffor.addToList(i);
                 buffor.notifyAll();
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+            }
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
     }
@@ -65,13 +65,13 @@ class Buffor {
     }
 
     public boolean isFull() {
-        if (queue.size() == 5) {
+        if (queue.size() >= 5) {
             return true;
         }
         return false;
     }
 
-    public boolean isEmpty(){
+    public boolean isEmpty() {
         if (queue.size() == 0) {
             return true;
         }
@@ -98,7 +98,7 @@ class Consum implements Runnable {
 
     @Override
     public void run() {
-        for (int i = 2; i < 1000; i++) {
+        for (int i = 2; i < 20; i++) {
             synchronized (buffor) {
                 while (buffor.isEmpty()) {
                     try {
@@ -108,17 +108,18 @@ class Consum implements Runnable {
                     }
                 }
                 int number = buffor.getNumber();
-                try {
-                    Thread.sleep(2000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                
                 buffor.notifyAll();
                 if (isPrime(number)) {
                     System.out.println("Liczba pierwsza: " + number);
                 } else {
                     System.out.println("Liczba nie jest liczba pierwsza: " + number);
                 }
+            }
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
         }
     }
