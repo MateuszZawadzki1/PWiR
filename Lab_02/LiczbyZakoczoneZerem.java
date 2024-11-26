@@ -105,8 +105,7 @@ class Consument implements Runnable {
                     bufor.clearNumString();
                     bufor.notifyAll();
                     System.out.println(nums);
-                } 
-                
+                }  
             }
             try {
                 Thread.sleep(1000);
