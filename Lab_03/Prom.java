@@ -3,14 +3,22 @@ import java.util.Queue;
 
 class Prom {
     public static void main(String[] args) {
+        Buffor buffor = new Buffor();
+        Producer producer = new Producer(50, buffor);
+        Consumer consumer = new Consumer(buffor);
 
+        Thread producerThread = new Thread(producer);
+        Thread consumerThread = new Thread(consumer);
+
+        producerThread.start();
+        consumerThread.start();
     }
 }
 
 class Producer implements Runnable {
     /* Cars - */
     private int range = 100;
-    private Buffor buffor;
+    private final Buffor buffor;
 
     public Producer(int range, Buffor buffor) {
         this.buffor = buffor;
@@ -21,19 +29,25 @@ class Producer implements Runnable {
     public void run() {
         for (int i = 1; i < range; i++) {
             synchronized (buffor) {
-                while (buffor.pointAIsFull() && buffor.pointBIsFull()) {
-                    try {
-                        buffor.wait();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
+                if (i % 2 == 0) { // Dodawanie do pointB
+                    while (buffor.pointBIsFull()) {
+                        try {
+                            buffor.wait();
+                        } catch (InterruptedException e) {
+                        }
                     }
-                }
-                if (i % 2 == 0) {
                     buffor.addToPointb(new Car(i));
-                } else {
+                } else { // Dodawanie do pointA
+                    while (buffor.pointAIsFull()) {
+                        try {
+                            buffor.wait();
+                        } catch (InterruptedException ex) {
+                        }
+                    }
                     buffor.addToPointA(new Car(i));
                 }
-                notifyAll();
+                
+                buffor.notifyAll();
             }
         }
     }
@@ -42,9 +56,9 @@ class Producer implements Runnable {
 
 class Buffor {
     private int side = 1;
-    private int MAX_CAPACITY = 5;
-    private Queue<Car> pointA = new LinkedList<>();
-    private Queue<Car> pointB = new LinkedList<>();
+    private final int MAX_CAPACITY = 5;
+    private final Queue<Car> pointA = new LinkedList<>();
+    private final Queue<Car> pointB = new LinkedList<>();
 
     Queue<Car> ferry = new LinkedList<>();
 
@@ -70,17 +84,11 @@ class Buffor {
     }
 
     public boolean pointAIsFull() {
-        if (pointA.size() > 5) {
-            return true;
-        }
-        return false;
+        return pointA.size() >= MAX_CAPACITY;
     }
 
     public boolean pointBIsFull() {
-        if (pointB.size() > 5) {
-            return true;
-        }
-        return false;
+        return pointB.size() >= MAX_CAPACITY;
     }
 
     // FERRY
@@ -102,10 +110,7 @@ class Buffor {
     }
 
     public boolean ferryIsFull () {
-        if (ferry.size() == MAX_CAPACITY) {
-            return true;
-        }
-        return false;
+        return ferry.size() >= MAX_CAPACITY;
     }
 
     public void switchSide() {
@@ -125,7 +130,12 @@ class Buffor {
 class Consumer implements Runnable {
     /* Prom - */
 
-    private Buffor buffor;
+    private final Buffor buffor;
+
+    public Consumer(Buffor buffor) {
+        this.buffor = buffor;
+    }
+
     @Override
     public void run() {
         for (int i = 0; i < 50; i++) {
@@ -134,20 +144,17 @@ class Consumer implements Runnable {
                     try {
                         buffor.wait();
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
                     }
                 }
                 buffor.addToFerry();
-                // DODAC CZAS
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
                 }
                 
                 buffor.removeFromFerry();
                 buffor.switchSide();
-                notifyAll();
+                buffor.notifyAll();
             }
         }
     }
