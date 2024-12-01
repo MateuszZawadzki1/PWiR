@@ -1,7 +1,9 @@
+
 import java.util.LinkedList;
 import java.util.Queue;
 
 class Prom {
+
     public static void main(String[] args) {
         Buffor buffor = new Buffor();
         Producer producer = new Producer(50, buffor);
@@ -16,6 +18,7 @@ class Prom {
 }
 
 class Producer implements Runnable {
+
     /* Cars - */
     private int range = 100;
     private final Buffor buffor;
@@ -36,17 +39,25 @@ class Producer implements Runnable {
                         } catch (InterruptedException e) {
                         }
                     }
-                    buffor.addToPointb(new Car(i));
+                    try {
+                        buffor.addToPointb(new Car(i));
+                    } catch (Exception e) {
+                        buffor.addToPointA(new Car(i));
+                    }
                 } else { // Dodawanie do pointA
                     while (buffor.pointAIsFull()) {
                         try {
                             buffor.wait();
-                        } catch (InterruptedException ex) {
+                        } catch (InterruptedException e) {
                         }
                     }
-                    buffor.addToPointA(new Car(i));
+                    try {
+                        buffor.addToPointA(new Car(i));
+                    } catch (Exception e) {
+                        buffor.addToPointb(new Car(i));
+                    }
+
                 }
-                
                 buffor.notifyAll();
             }
         }
@@ -55,6 +66,7 @@ class Producer implements Runnable {
 }
 
 class Buffor {
+
     private int side = 1;
     private final int MAX_CAPACITY = 5;
     private final Queue<Car> pointA = new LinkedList<>();
@@ -63,37 +75,36 @@ class Buffor {
     Queue<Car> ferry = new LinkedList<>();
 
     // SIDES A B
-    public void addToPointA(Car car) {
+    synchronized public void addToPointA(Car car) {
         pointA.add(car);
-        System.out.printf("Added car with %d index to Point A", car.getIndex());
+        System.out.printf("Added car with %d index to Point A\n size: %d\n", car.getIndex(), pointA.size());
     }
 
-    public void addToPointb(Car car) {
+    synchronized public void addToPointb(Car car) {
         pointB.add(car);
-        System.out.printf("Added car with %d index to Point B", car.getIndex());
+        System.out.printf("Added car with %d index to Point B\n size: %d\n", car.getIndex(), pointB.size());
     }
 
-    public Car getCarFromA() {
+    synchronized public Car getCarFromA() {
         Car x = pointA.poll();
         return x;
     }
 
-    public Car getCarFromB() {
+    synchronized public Car getCarFromB() {
         Car y = pointB.poll();
         return y;
     }
 
-    public boolean pointAIsFull() {
+    synchronized public boolean pointAIsFull() {
         return pointA.size() >= MAX_CAPACITY;
     }
 
-    public boolean pointBIsFull() {
+    synchronized public boolean pointBIsFull() {
         return pointB.size() >= MAX_CAPACITY;
     }
 
     // FERRY
-
-    public void addToFerry() {
+    synchronized public void addToFerry() {
         if (side == 1) {
             ferry.add(getCarFromA());
         } else if (side == 2) {
@@ -102,34 +113,51 @@ class Buffor {
         System.out.println("Car draw in ferry");
     }
 
-    public void removeFromFerry() {
+    synchronized public void removeFromFerry() {
         while (!ferry.isEmpty()) {
             Car x = ferry.poll();
-            System.out.println("Car " + x.getIndex() + " left");
+            System.out.println("Car " + x.getIndex() + " left from Ferry on " + side + " Point");
         }
+        ferry.clear();  // Clearing queue
     }
 
-    public boolean ferryIsFull () {
+    synchronized public boolean ferryIsFull() {
         return ferry.size() >= MAX_CAPACITY;
     }
 
-    public void switchSide() {
+    synchronized public void switchSide() {
         // Side = 1 it's PointA |   Side = 2 it's pointB
         if (side == 1) {
             this.side = 2;
+            System.out.println("Prom on point B");
         } else if (side == 2) {
             this.side = 1;
+            System.out.println("Prom on point A");
         }
     }
-    
-    public int getSide() {
+
+    synchronized public int getSide() {
         return side;
+    }
+
+    synchronized public boolean sideIsEmpty() {
+        if (side == 1) {
+            if (pointA.isEmpty()) {
+                return true;
+            }
+        }
+        if (side == 2) {
+            if (pointB.isEmpty()) {
+                return true;
+            }
+        }
+        return false;
     }
 }
 
 class Consumer implements Runnable {
-    /* Prom - */
 
+    /* Prom - */
     private final Buffor buffor;
 
     public Consumer(Buffor buffor) {
@@ -140,20 +168,32 @@ class Consumer implements Runnable {
     public void run() {
         for (int i = 0; i < 50; i++) {
             synchronized (buffor) {
-                while (buffor.ferryIsFull()) {
-                    try {
-                        buffor.wait();
-                    } catch (InterruptedException e) {
-                    }
+
+                if (buffor.ferryIsFull()) {
+                    System.out.println("Prom is full!");
+                    buffor.switchSide();
+                    buffor.removeFromFerry();
                 }
                 buffor.addToFerry();
+
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
-                
-                buffor.removeFromFerry();
-                buffor.switchSide();
+
+                while (buffor.sideIsEmpty()) {
+                    try {
+                        buffor.wait();
+                    } catch (InterruptedException ex) {
+                    }
+                }
+
+                try {
+                    Thread.sleep(2000);
+                } catch (InterruptedException ex) {
+                }
+
                 buffor.notifyAll();
             }
         }
@@ -162,6 +202,7 @@ class Consumer implements Runnable {
 }
 
 class Car {
+
     private int index;
 
     public Car(int index) {
