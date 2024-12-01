@@ -2,6 +2,8 @@
 import java.util.ArrayList;
 import java.util.Random;
 
+import sito.Generator;
+
 class LiczbyZakoczoneZerem {
 
     public static void main(String[] args) {
