@@ -2,8 +2,6 @@
 import java.util.ArrayList;
 import java.util.Random;
 
-import sito.Generator;
-
 class LiczbyZakoczoneZerem {
 
     public static void main(String[] args) {
@@ -63,10 +61,7 @@ class Bufor {
     }
 
     public boolean isEmpty() {
-        if (currentNumber.equals("")) {
-            return true;
-        }
-        return false;
+        return currentNumber.equals("");
     }
 
     public void clearNumString() {
@@ -79,7 +74,7 @@ class Consument implements Runnable {
 
     private final Bufor bufor;
     private final int range;
-    private final ArrayList<Integer> nums = new ArrayList();
+    private final ArrayList<Integer> nums = new ArrayList<>();
 
     public Consument(Bufor bufor, int range) {
         this.bufor = bufor;
@@ -102,7 +97,7 @@ class Consument implements Runnable {
                     }
                 }
                 System.out.println(bufor.getCurrentNumber());
-                if ( !bufor.isEmpty() && bufor.getCurrentNumber().charAt(bufor.getCurrentNumber().length()-1) == '0') {
+                if ( !bufor.isEmpty() && bufor.getCurrentNumber().endsWith("0")) {
                     nums.add(pullOutNumber(bufor.getCurrentNumber()));
                     bufor.clearNumString();
                     bufor.notifyAll();
@@ -112,7 +107,6 @@ class Consument implements Runnable {
             try {
                 Thread.sleep(1000);
             } catch (InterruptedException e) {
-                e.printStackTrace();
             }
         }
     }
