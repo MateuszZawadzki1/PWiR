@@ -70,6 +70,8 @@ class Buffer {
 class Consumer implements Runnable{
     /*Check buffer lists and move counter */
     private final Buffer buffer;
+    private Player playerA;
+    private Player playerB;
 
 
     public Consumer(Buffer buffer) {
@@ -84,7 +86,7 @@ class Consumer implements Runnable{
                     buffer.wait();
                 }
 
-                buffer.g
+                buffer.
 
                 
             }
