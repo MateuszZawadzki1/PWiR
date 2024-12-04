@@ -4,15 +4,17 @@ import java.util.Random;
 import java.util.Scanner;
 
 public class Sensor {
-    public static void main(String[] args) {
-        Scanner scanner = new Scanner(System.in);
-        System.out.println("Type limit of results: ");
-        int limitUser = scanner.nextInt();
+    public static void main(String[] args) throws InterruptedException {
+        int limitUser;
+        try (Scanner scanner = new Scanner(System.in)) {
+            System.out.println("Type limit of results: ");
+            limitUser = scanner.nextInt();
+        }
 
-        Buffer buffer = new Buffer();
+        Buffer buffer = new Buffer(limitUser);
         Producer producer1 = new Producer(buffer, 1);
         Producer producer2 = new Producer(buffer, 2);
-        Consumer consumer = new Consumer(buffer, limitUser);
+        Consumer consumer = new Consumer(buffer);
 
         Thread threadProducer1 = new Thread(producer1);
         Thread threadProducer2 = new Thread(producer2);
@@ -22,14 +24,20 @@ public class Sensor {
         threadProducer2.start();
         threadConsumer.start();
 
+
+        threadProducer1.join();
+        threadProducer2.join();
+        threadConsumer.join();
+
+        System.out.println("It;s end");
+
     }
 }
 
 class Producer implements Runnable {
     /* Generating nums for sensor */
-    private boolean controllerProduce = true;
-    private Buffer buffer;
-    private int choosenSensor;
+    private final Buffer buffer;
+    private final int choosenSensor;
 
     public Producer(Buffer buffer, int choosenSensor) {
         this.buffer = buffer;
@@ -40,12 +48,12 @@ class Producer implements Runnable {
 
     @Override
     public void run() {
-        while (controllerProduce) {
+        while (buffer.canProduce()) {
             int binaryNum = random.nextInt(0, 2);
-            int binaryNum2 = random.nextInt(1, 2);
+            int binaryNum2 = random.nextInt(0, 2);
 
             try {
-                Thread.sleep(1500);
+                Thread.sleep(random.nextInt(1000, 1500));
             } catch (InterruptedException e) {
             }
 
@@ -71,12 +79,19 @@ class Buffer {
     Queue<Integer> firstSensor = new LinkedList<>();
     Queue<Integer> secondSensor = new LinkedList<>();
     int MAX_CAPACITY = 5;
+    private int totalReadings = 0;
+    private final int limit;    // Limit by user
+
+    public Buffer(int limit) {
+        this.limit = limit;
+    }
 
     public synchronized void produceFirstSensor(int i) throws InterruptedException {
         while (isFullFirstSens()) {
             wait();
         }
         addFirstSensor(i);
+        totalReadings++;
         notifyAll();
     }
 
@@ -85,27 +100,38 @@ class Buffer {
             wait();
         }
         addSecondSensor(i);
-
+        totalReadings++;
         notifyAll();
     }
 
     public synchronized void consume() throws InterruptedException {
+        Random random = new Random();
         while (isEmpty()) {
+            System.out.println("CZEKAM");
             wait();
         }
+        Thread.sleep(random.nextInt(1000, 5001));
+        
         sumOfFirstSensor();
 
-        if (productOfSecondSensor() != 0) {
-            System.out.println(getExpression());
-            clearFirstSensor();
-            clearSecondSensor();
-            System.out.println("Czysczenie list");
-        } else {
-            wait();
-        }
+
+        if (productOfSecondSensor() != 1e-8) {
+            System.out.println("Wynik: " + getExpression());
+            Thread.sleep(2000);
+        } else if (productOfSecondSensor() <= 1e-8) {
+            System.out.println("Denominator is too small");
+            return;
+        } else if (productOfSecondSensor() == 0) {
+            System.out.println("Denominator is too small");
+            return; }
+
 
         notifyAll();
 
+    }
+
+    public boolean canProduce() {
+        return totalReadings < limit;
     }
 
     public void addFirstSensor(int i) {
@@ -155,24 +181,22 @@ class Buffer {
     }
 
     public boolean isEmpty() {
-        return (firstSensor.size() == 0 && secondSensor.size() == 0);
+        return firstSensor.isEmpty() || secondSensor.isEmpty();
     }
 
 }
 
 class Consumer implements Runnable {
     /* Calculating data */
-    private int userLimit;
     Buffer buffer;
 
-    public Consumer(Buffer buffer, int userLimit) {
+    public Consumer(Buffer buffer) {
         this.buffer = buffer;
-        this.userLimit = userLimit;
     }
 
     @Override
     public void run() {
-        for (int i = 0; i < userLimit; i++) {
+        while (buffer.canProduce()) {
             try {
                 buffer.consume();
             } catch (InterruptedException e) {
