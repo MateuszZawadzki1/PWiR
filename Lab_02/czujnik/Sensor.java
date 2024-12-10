@@ -29,7 +29,7 @@ public class Sensor {
         threadProducer2.join();
         threadConsumer.join();
 
-        System.out.println("It;s end");
+        System.out.println("It's end");
 
     }
 }
@@ -48,9 +48,9 @@ class Producer implements Runnable {
 
     @Override
     public void run() {
-        while (buffer.canProduce()) {
+        while (buffer.canProduce(buffer.active)) {
             int binaryNum = random.nextInt(0, 2);
-            int binaryNum2 = random.nextInt(0, 2);
+            int binaryNum2 = random.nextInt(1, 2);
 
             try {
                 Thread.sleep(random.nextInt(1000, 1500));
@@ -70,7 +70,7 @@ class Producer implements Runnable {
             }
 
         }
-
+        return;
     }
 
 }
@@ -81,6 +81,7 @@ class Buffer {
     int MAX_CAPACITY = 5;
     private int totalReadings = 0;
     private final int limit;    // Limit by user
+    boolean active = true;
 
     public Buffer(int limit) {
         this.limit = limit;
@@ -105,33 +106,44 @@ class Buffer {
     }
 
     public synchronized void consume() throws InterruptedException {
+        int i = 0;
+        int sumOfResults = 0;
         Random random = new Random();
         while (isEmpty()) {
             System.out.println("CZEKAM");
             wait();
         }
         Thread.sleep(random.nextInt(1000, 5001));
+
+        if (i <= sumOfResults) {
+            i++;
+            wait();
+        }
         
         sumOfFirstSensor();
 
 
-        if (productOfSecondSensor() != 1e-8) {
+        if (productOfSecondSensor() >= 1e-8 && productOfSecondSensor() != 0) {
             System.out.println("Wynik: " + getExpression());
+            sumOfResults++;
             Thread.sleep(2000);
         } else if (productOfSecondSensor() <= 1e-8) {
             System.out.println("Denominator is too small");
-            return;
+            active = false;
         } else if (productOfSecondSensor() == 0) {
             System.out.println("Denominator is too small");
-            return; }
+            active = false;
+        } else if (limit < totalReadings){
+            active = false;
+        }
 
 
         notifyAll();
 
     }
 
-    public boolean canProduce() {
-        return totalReadings < limit;
+    public boolean canProduce(boolean active) {
+        return active && totalReadings < limit;
     }
 
     public void addFirstSensor(int i) {
@@ -156,6 +168,10 @@ class Buffer {
         int sumOfSens2 = 1;
         for (int i : secondSensor) {
             sumOfSens2 *= i;
+        }
+
+        if (sumOfSens2 == 0) {
+            return 0;
         }
         return Double.valueOf(sumOfSens2);
     }
@@ -196,12 +212,13 @@ class Consumer implements Runnable {
 
     @Override
     public void run() {
-        while (buffer.canProduce()) {
+        while (buffer.canProduce(buffer.active)) {
             try {
                 buffer.consume();
             } catch (InterruptedException e) {
             }
         }
+        return;
     }
 
 }
