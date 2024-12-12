@@ -80,7 +80,7 @@ class Buffer {
     Queue<Integer> secondSensor = new LinkedList<>();
     int MAX_CAPACITY = 5;
     private int totalReadings = 0;
-    private final int limit;    // Limit by user
+    private int limit;    // Limit by user
     boolean active = true;
 
     public Buffer(int limit) {
@@ -115,10 +115,10 @@ class Buffer {
         }
         Thread.sleep(random.nextInt(1000, 5001));
 
-        if (i <= sumOfResults) {
-            i++;
-            wait();
-        }
+        // if (i <= sumOfResults) {
+        //     i++;
+        //     wait();
+        // }
         
         sumOfFirstSensor();
 
@@ -143,6 +143,7 @@ class Buffer {
     }
 
     public boolean canProduce(boolean active) {
+        System.out.println(active);
         return active && totalReadings < limit;
     }
 

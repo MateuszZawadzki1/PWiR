@@ -5,108 +5,153 @@ import java.util.Random;
 
 class BoardGame {
     public static void main(String[] args) {
-        
+
     }
 }
 
 class Producer implements Runnable {
-    /*Rolling Dices*/
+    /* Rolling Dices */
     private final Buffer buffer;
-    private boolean activate;
 
-    Random random = new Random();
-    
-    public Producer(Buffer buffer){
+    public Producer(Buffer buffer) {
         this.buffer = buffer;
     }
 
     @Override
     public void run() {
-        while (activate) {
-            int a = random.nextInt(1, 7);
-            int b = random.nextInt(1, 7);
-
-            buffer.addDiceRoll(a, b);
-    }
-
+        while (buffer.canProduce()) {
+            buffer.produce();
+        }
     }
 }
 
 class Buffer {
-    private Queue<ArrayList<Integer>> aPLayerRolls = new LinkedList<>();
-    private Queue<ArrayList<Integer>> bPlayerRolls = new LinkedList<>();
+    private Queue<Integer> aPlayerRolls = new LinkedList<>();
+    private Queue<Integer> bPlayerRolls = new LinkedList<>();
+    Random random = new Random();
+    private int MAX_CAPACITY = 5;
 
-    synchronized public void addDiceRoll(int a, int b) {
-        ArrayList<Integer> roll = new ArrayList<>();
-        roll.add(a);
-        roll.add(b);
+    synchronized public void produce() {
+        int a = random.nextInt(1, 7);
+        int b = random.nextInt(1, 7);
+
+        while (isFull()) {
+            try {
+                wait();
+            } catch (InterruptedException e) {
+            }
+        }
+
+        addDiceRoll(a, b);
+
+        notifyAll();
+    }
+
+    synchronized public void consume(Player playerA, Player playerB) {
+        while (isEmptyAPlayerRolls() || isEmptyBPlayerRolls()) {
+            try {
+                wait();
+            } catch (InterruptedException e) {}
+        }
+
+        if (playerA.getPosition() >= 100) {
+            // Dodac wylaczenie petli
+        } else if (playerB.getPosition() >= 100) {
+            // Dodac wylaczenie petli
+        }
+
+        playerA.changePosition(getAPlayRoll());
+        playerB.changePosition(getBPlayerRoll());
+
+        System.out.println("Player a position: " + playerA.getPosition());
+        System.out.println("Player b positions: " + playerB.getPosition());
+        
+    }
+
+    public void addDiceRoll(int a, int b) {
         if (isEven(a)) {
-            aPLayerRolls.add(roll);
+            aPlayerRolls.add(a+b);
         } else {
-            bPlayerRolls.add(roll);
+            bPlayerRolls.add(a+b);
         }
     }
 
-    synchronized public boolean isEven(int a) {
+    public boolean isEven(int a) {
         return a % 2 == 0;
     }
 
-    synchronized public Queue<ArrayList<Integer>> getAPlayerRolls() {
-        return aPLayerRolls;
+    public Queue<Integer> getAPlayerRolls() {
+        return aPlayerRolls;
     }
 
-    synchronized public Queue<ArrayList<Integer>> getBPlayerRolls() {
+    public Queue<Integer> getBPlayerRolls() {
         return bPlayerRolls;
     }
 
-    synchronized public boolean isEmptyAPlayerRolls() {
-        return aPLayerRolls.isEmpty();
+    public int getAPlayRoll() {
+        int x = aPlayerRolls.poll();
+        return x;
     }
 
-    // DODAC SUMOWANIE RZUTU WYCIAGAJ INDEKSY LISTOWE 
+    public int getBPlayerRoll() {
+        int x = bPlayerRolls.poll();
+        return x;
+    }
+
+    public boolean isEmptyAPlayerRolls() {
+        return aPlayerRolls.isEmpty();
+    }
+
+    public boolean isEmptyBPlayerRolls() {
+        return bPlayerRolls.isEmpty();
+    }
+
+    public boolean canProduce() {
+        return true;
+    }
+
+    public boolean isFull() {
+        return aPlayerRolls.size() > MAX_CAPACITY || bPlayerRolls.size() > MAX_CAPACITY;
+    }
+
+    
+
+
 
 }
 
-class Consumer implements Runnable{
-    /*Check buffer lists and move counter */
+class Consumer implements Runnable {
+    /* Check buffer lists and move counter */
     private final Buffer buffer;
     private Player playerA;
     private Player playerB;
 
-
-    public Consumer(Buffer buffer) {
+    public Consumer(Buffer buffer, Player playerA, Player playerB) {
         this.buffer = buffer;
     }
 
     @Override
     public void run() {
-        while (activate){
-            synchronized (buffer) {
-                while (buffer.isEmptyAPlayerRolls()) {
-                    buffer.wait();
-                }
-
-                buffer.
-
-                
+        while (buffer.canProduce()){
+                buffer.consume();
             }
-        }
+        
     }
 
 }
 
 class Player {
-    private int position;
-    public Player(){
+    private int position = 0;
+
+    public Player() {
     }
 
-    public void changePosition(int value){
+    public void changePosition(int value) {
         position += value;
     }
 
     public int getPosition() {
         return position;
     }
-
 
 }
