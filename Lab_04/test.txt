@@ -1,9 +1,6 @@
-# Pytanie 1
-P: Jak nazywa się stolica Polski?
-A: Warszawa
-B: Kraków
-C: Gdańsk
-CORRECT: A
+Jak nazywa się stolica Polski?
+A: Warszawa; B: Kraków; C: Gdańsk
+A
 
 # Pytanie 2
 P: Który rok był rokiem 2000?
