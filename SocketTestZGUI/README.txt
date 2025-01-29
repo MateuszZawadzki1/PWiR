@@ -1,3 +1,9 @@
+###############################################
+
+CHAT APPLICATION
+
+###############################################
+
 OPIS APLIKACJI:
 Aplikacja to chat działający w sieci lokalnej przy pomocy Socketów na porcie 1234.
 Umozliwia komunikacje miedzy uzytkownikami za pomoca wysylania i odbierania wiadomosci.
@@ -8,3 +14,12 @@ INSTRUKCJA URUCHOMIENIA(Terminal|Miejsce plików):
 2. W kazdym kolejnym terminalu odpalic klienta za pomoca: java Client
 3. Podac nazwe uzytkownikam
 4. Mozna zaczac rozmawiac:)
+
+
+_______________________________
+Update
+_______________________________
++ GUI
++ Wysyłanie Enterem oraz guzikiem SEND
++ Wyróżnienie użytkownika w czacie
+
