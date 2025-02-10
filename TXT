@@ -1,0 +1,56 @@
+1. Semafor binarny
+Semafor binarny to mechanizm synchronizacji, który może przyjmować tylko dwa stany: 0 (zablokowany) i 1 (odblokowany). Jest stosowany do zapewnienia wzajemnego wykluczania w dostępie do zasobów.
+
+2. Semafor ogólny a binarny
+Semafor binarny: Przyjmuje wartości 0 lub 1, działa jak mutex.
+Semafor ogólny (licznikowy): Może mieć wartość większą od 1, pozwalając na ograniczoną liczbę wątków korzystających z zasobu jednocześnie.
+3. Definicja monitora
+Monitor to mechanizm synchronizacji składający się z sekcji krytycznej i zmiennych warunkowych, który zapewnia wzajemne wykluczanie i synchronizację wątków w językach programowania takich jak Java.
+
+4. Metody synchronizacji wątków w Java
+synchronized (metody, bloki kodu)
+wait(), notify(), notifyAll()
+ReentrantLock (z Lock i Condition)
+Semaphore
+CountDownLatch, CyclicBarrier
+ExecutorService
+volatile, Atomic* (np. AtomicInteger)
+5. Problem promu i aut (synchronizacja)
+Problem: Na prom wchodzi ograniczona liczba aut, trzeba zapewnić synchronizację wejścia i wyjścia.
+Rozwiązanie: Można użyć semaforów (ograniczenie liczby aut) i monitora do sterowania kolejnością wjazdu.
+6. Problem ucztujących filozofów
+Opis: Pięciu filozofów siedzi przy okrągłym stole, każdy ma przed sobą pałeczki. Muszą na zmianę jeść i myśleć, ale do jedzenia potrzebują dwóch pałeczek.
+Problem współbieżności: Możliwe zakleszczenie (deadlock), głodzenie wątków.
+Rozwiązania:
+Ograniczenie liczby filozofów jednocześnie próbujących jeść.
+Nadanie priorytetów.
+Użycie asynchronicznych mechanizmów (np. ReentrantLock w Java).
+7. Inny problem współbieżności – producenci i konsumenci
+Opis: Producent tworzy dane i umieszcza je w buforze, a konsument je pobiera.
+Problem: Bufor może się przepełnić lub opróżnić.
+Rozwiązanie: Semafory, wait()/notify(), BlockingQueue w Java.
+8. Idea klient-serwer
+System, w którym klient żąda usług, a serwer je dostarcza, np. strony internetowe, bazy danych.
+
+9. Rola serwera i klienta
+Serwer: Oczekuje na żądania, przetwarza je i odsyła odpowiedzi.
+Klient: Wysyła żądania do serwera i odbiera odpowiedzi.
+10. Sposoby komunikacji klient-serwer
+Gniazda (Sockets) – komunikacja przez TCP/UDP.
+HTTP – serwer WWW.
+RMI (Remote Method Invocation) – wywołania zdalnych metod.
+gRPC, REST API – nowoczesne podejścia.
+11. Klasy do komunikacji klient-serwer w Java
+Połączenie: ServerSocket (serwer), Socket (klient).
+Wymiana danych: InputStream, OutputStream, BufferedReader, PrintWriter.
+12. Idea RMI (Remote Method Invocation)
+Umożliwia wywoływanie metod na obiektach znajdujących się na zdalnej maszynie.
+
+13. Rejestr początkowy, namiastka obiektu
+Rejestr RMI: rmiregistry – przechowuje referencje do obiektów zdalnych.
+Namiastka (stub): Obiekt proxy działający po stronie klienta, który przesyła wywołania metod do serwera.
+14. Tworzenie obiektów zdalnych w Java
+Tworzymy interfejs dziedziczący po Remote.
+Implementujemy interfejs w klasie dziedziczącej UnicastRemoteObject.
+Rejestrujemy obiekt w RMI Registry (LocateRegistry.createRegistry() + Naming.rebind()).
+Klient pobiera referencję z rejestru (Naming.lookup()) i wywołuje metody zdalne.
